@@ -2,32 +2,44 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
+	"strconv"
 	"sync"
 )
 
-func main(){
+func createServer(port int) *http.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Hello world at "+strconv.Itoa(port))
+	})
+
+	server := http.Server{
+		Addr:    fmt.Sprintf(":%v", port),
+		Handler: mux,
+	}
+	return &server
+}
+
+func main() {
 	wg := new(sync.WaitGroup)
 
 	wg.Add(3)
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello world at " + r.Host)
-	})
-
-	go func(){
-		log.Fatal(http.ListenAndServe(":9000", nil))
+	go func() {
+		server := createServer(9000)
+		fmt.Println(server.ListenAndServe())
 		wg.Done()
 	}()
 
-	go func(){
-		log.Fatal(http.ListenAndServe(":9001", nil))
+	go func() {
+		server := createServer(9001)
+		fmt.Println(server.ListenAndServe())
 		wg.Done()
 	}()
 
-	go func(){
-		log.Fatal(http.ListenAndServe(":9002", nil))
+	go func() {
+		server := createServer(9002)
+		fmt.Println(server.ListenAndServe())
 		wg.Done()
 	}()
 
